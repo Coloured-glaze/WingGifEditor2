@@ -96,16 +96,37 @@ jobs:
             print('Build directory does not exist')
         "
         echo "Installing to: ${{github.workspace}}/install"
-        # 使用Python创建安装目录
+        # 使用Python创建安装目录并执行CMake安装
         python -c "
         import os
+        import subprocess
         workspace = os.environ.get('GITHUB_WORKSPACE', '${{github.workspace}}')
+        build_path = os.path.join(workspace, 'build')
         install_path = os.path.join(workspace, 'install')
         os.makedirs(install_path, exist_ok=True)
         print('Created install directory:', install_path)
-        "
+        
         # 执行CMake安装
-        cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --prefix ${{github.workspace}}/install
+        cmake_install_cmd = [
+            'cmake',
+            '--install',
+            build_path,
+            '--config',
+            '${{env.BUILD_TYPE}}',
+            '--prefix',
+            install_path
+        ]
+        print('Executing:', ' '.join(cmake_install_cmd))
+        result = subprocess.run(cmake_install_cmd, capture_output=True, text=True)
+        print('CMake install stdout:', result.stdout)
+        if result.stderr:
+            print('CMake install stderr:', result.stderr)
+        if result.returncode != 0:
+            print('CMake install failed with return code:', result.returncode)
+            exit(result.returncode)
+        else:
+            print('CMake install completed successfully')
+        "
       shell: bash
 
     - name: List installed files
