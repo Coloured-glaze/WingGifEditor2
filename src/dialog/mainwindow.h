@@ -218,6 +218,10 @@ private:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    
+    // Drag and drop events
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 private:
     Ribbon *m_ribbon = nullptr;

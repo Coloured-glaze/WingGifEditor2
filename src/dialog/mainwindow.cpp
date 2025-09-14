@@ -62,6 +62,9 @@
 #include <QFileDialog>
 #include <QPainter>
 #include <QDir>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
 
 constexpr auto EMPTY_FUNC = [] {};
 
@@ -199,6 +202,9 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
     plg.LoadPlugin();
 
     setEditModeEnabled(false);
+
+    // Enable drag and drop
+    setAcceptDrops(true);
 
     setWindowTitle(tr("WingGifEditor"));
     setWindowIcon(ICONRES("icon"));
@@ -1365,6 +1371,57 @@ int MainWindow::getNewFrameInterval() {
         return ret - ret % 10;
     } else {
         return -1;
+    }
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
+    // Accept drag events that contain URLs (files)
+    if (event->mimeData()->hasUrls()) {
+        event->acceptProposedAction();
+    }
+}
+
+void MainWindow::dropEvent(QDropEvent *event) {
+    const QMimeData *mimeData = event->mimeData();
+
+    if (mimeData->hasUrls()) {
+        QStringList pathList;
+        QList<QUrl> urlList = mimeData->urls();
+
+        // Collect file paths
+        for (int i = 0; i < urlList.size() && i < 32; ++i) {
+            QString filePath = urlList.at(i).toLocalFile();
+            // Check if it's a GIF file
+            if (checkIsGif(filePath)) {
+                pathList.append(filePath);
+            }
+        }
+
+        if (!pathList.isEmpty()) {
+            QString fileToOpen;
+
+            if (pathList.size() > 1) {
+                // If multiple GIF files are dropped, ask user to choose one
+                bool ok;
+                fileToOpen = WingInputDialog::getItem(this, tr("ChooseFile"),
+                                                     tr("Choose to open"), pathList, 0,
+                                                     false, &ok);
+                if (!ok) {
+                    return;
+                }
+            } else {
+                fileToOpen = pathList.first();
+            }
+
+            // Check if there's already an open file and ask for confirmation
+            if (!_curfilename.isEmpty() && !ensureSafeClose()) {
+                return;
+            }
+
+            // Open the selected GIF file
+            openGif(fileToOpen);
+            event->acceptProposedAction();
+        }
     }
 }
 
