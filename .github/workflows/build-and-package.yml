@@ -78,11 +78,6 @@ jobs:
     - name: Install
       run: cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-    - uses: actions/upload-artifact@v4
-      with:
-        name: WingGifEditor2-${{ inputs.os == 'windows-latest' && 'windows' || 'linux' }}-${{ inputs.qt_version }}-build-cache
-        path: ${{github.workspace}}/build
-
     - name: List files after build
       run: |
         echo "Listing files in install directory:"
@@ -92,3 +87,8 @@ jobs:
           ls -la ${{github.workspace}}/install || true
         fi
       shell: bash
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: WingGifEditor2-${{ inputs.os == 'windows-latest' && 'windows' || 'linux' }}-${{ inputs.qt_version }}-build-cache
+        path: ${{github.workspace}}/build

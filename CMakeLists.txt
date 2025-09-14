@@ -260,3 +260,19 @@ set_target_properties(
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(WingGifEditor2)
 endif()
+
+# Install executable
+install(TARGETS WingGifEditor2
+        RUNTIME DESTINATION bin)
+
+# Install resources
+install(FILES ${CMAKE_SOURCE_DIR}/resources.qrc
+        DESTINATION resources)
+
+# Install translations
+install(DIRECTORY ${QM_OUTPUT_DIR}/
+        DESTINATION lang)
+
+# Install theme files
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/theme/
+        DESTINATION theme)
