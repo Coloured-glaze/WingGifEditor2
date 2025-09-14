@@ -20,9 +20,6 @@
 
 #include "framelessdialogbase.h"
 #include <QCheckBox>
-#include <QDialogButtonBox>
-#include <QLabel>
-#include <QVBoxLayout>
 
 class ConfirmDialog : public FramelessDialogBase {
     Q_OBJECT

@@ -98,6 +98,8 @@ set(PROJECT_SOURCES
     src/dialog/gifsavedialog.cpp
     src/dialog/logdialog.h
     src/dialog/logdialog.cpp
+    src/dialog/confirmdialog.cpp
+    src/dialog/confirmdialog.h
     src/class/appmanager.cpp
     src/class/appmanager.h
     src/class/clipboardhelper.cpp

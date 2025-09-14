@@ -17,7 +17,6 @@
 
 #include "confirmdialog.h"
 #include <QDialogButtonBox>
-#include <QCheckBox>
 #include <QLabel>
 #include <QVBoxLayout>
 
