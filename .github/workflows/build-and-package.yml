@@ -91,4 +91,5 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: WingGifEditor2-${{ inputs.os == 'windows-latest' && 'windows' || 'linux' }}-${{ inputs.qt_version }}-build-cache
+        # 自动压缩为zip
         path: ${{github.workspace}}/build

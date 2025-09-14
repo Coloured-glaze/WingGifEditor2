@@ -4,6 +4,11 @@ project(WingGifEditor2 LANGUAGES CXX)
 
 set(PROJECT_VERSION 1.0.1)
 
+# Custom installation directory option
+if(NOT DEFINED CMAKE_INSTALL_PREFIX)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation directory")
+endif()
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
