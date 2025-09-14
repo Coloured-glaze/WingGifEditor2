@@ -19,6 +19,7 @@
 #define GIFCONTENTGALLERY_H
 
 #include <QListView>
+#include <QContextMenuEvent>
 
 class GifContentGallery : public QListView {
     Q_OBJECT
@@ -27,6 +28,10 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *e) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
+
+signals:
+    void exportSingleImage(int index);
 };
 
 #endif // GIFCONTENTGALLERY_H

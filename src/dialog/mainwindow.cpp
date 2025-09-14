@@ -61,6 +61,7 @@
 #include <QCloseEvent>
 #include <QFileDialog>
 #include <QPainter>
+#include <QDir>
 
 constexpr auto EMPTY_FUNC = [] {};
 
@@ -108,6 +109,7 @@ MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
                 _editor->setImage(img);
                 updateGifMessage();
             });
+    connect(_gallery, &GifContentGallery::exportSingleImage, this, &MainWindow::on_export_single);
     connect(_model, &QAbstractListModel::rowsInserted, this,
             &MainWindow::updateGifMessage);
     connect(_model, &QAbstractListModel::rowsRemoved, this,
@@ -788,6 +790,38 @@ void MainWindow::on_exportapply() {
 
     img.save(filename);
     Toast::toast(this, NAMEICONRES("blank"), tr("ExportSuccess"));
+}
+
+void MainWindow::on_export_single(int index) {
+    ExportDialog d(this);
+    if (d.exec()) {
+        auto res = d.getResult();
+        const char *ext = nullptr;
+        switch (res.type) {
+        case ExportImageType::PNG:
+            ext = "png";
+            break;
+        case ExportImageType::JPG:
+            ext = "jpg";
+            break;
+        case ExportImageType::TIFF:
+            ext = "tiff";
+            break;
+        case ExportImageType::WEBP:
+            ext = "webp";
+            break;
+        default:
+            return;
+        }
+        
+        QDir dir(res.path);
+        if (!dir.exists()) {
+            dir.mkpath(".");
+        }
+        
+        QString fileName = QString::number(index) + "." + ext;
+        _model->image(index).save(dir.absoluteFilePath(fileName), ext);
+    }
 }
 
 void MainWindow::on_applypic() {

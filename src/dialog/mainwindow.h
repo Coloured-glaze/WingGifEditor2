@@ -177,6 +177,7 @@ private slots:
     void on_anticlockwise();
     void on_exportapply();
     void on_applypic();
+    void on_export_single(int index);
 
     void on_fullscreen();
     void on_about();

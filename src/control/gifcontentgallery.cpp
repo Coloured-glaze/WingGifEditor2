@@ -18,6 +18,9 @@
 #include "gifcontentgallery.h"
 
 #include "class/picturedelegate.h"
+#include <QContextMenuEvent>
+#include <QMenu>
+#include <QModelIndex>
 
 GifContentGallery::GifContentGallery(QWidget *parent) : QListView(parent) {
     this->setWrapping(false);
@@ -34,4 +37,19 @@ void GifContentGallery::resizeEvent(QResizeEvent *e) {
     if (this->model()) {
         emit this->model()->layoutChanged();
     }
+}
+
+void GifContentGallery::contextMenuEvent(QContextMenuEvent *event) {
+    QModelIndex index = indexAt(event->pos());
+    if (index.isValid()) {
+        QMenu menu(this);
+        QAction *exportAction = menu.addAction(tr("Export Single Image"));
+        QAction *selectedAction = menu.exec(event->globalPos());
+        
+        if (selectedAction == exportAction) {
+            emit exportSingleImage(index.row());
+        }
+    }
+    
+    QListView::contextMenuEvent(event);
 }
