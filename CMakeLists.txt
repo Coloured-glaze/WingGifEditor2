@@ -268,16 +268,16 @@ endif()
 
 # Install executable
 install(TARGETS WingGifEditor2
-        RUNTIME DESTINATION bin)
+        RUNTIME DESTINATION .)
 
 # Install resources
 install(FILES ${CMAKE_SOURCE_DIR}/resources.qrc
-        DESTINATION resources)
+        DESTINATION .)
 
 # Install translations
 install(DIRECTORY ${QM_OUTPUT_DIR}/
-        DESTINATION lang)
+        DESTINATION ./lang)
 
 # Install theme files
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/theme/
-        DESTINATION theme)
+        DESTINATION ./theme)

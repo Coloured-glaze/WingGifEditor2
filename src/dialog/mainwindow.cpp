@@ -1185,8 +1185,8 @@ bool MainWindow::exportGifFrames(const QString &dirPath, const char *ext) {
 
 #pragma omp parallel for
         for (int i = 0; i < _model->frameCount(); ++i) {
-            _model->image(i).save(dir.absoluteFilePath(QString::number(i)),
-                                  ext);
+            QString fileName = QString::number(i) + "." + ext;
+            _model->image(i).save(dir.absoluteFilePath(fileName), ext);
         }
     }
 
