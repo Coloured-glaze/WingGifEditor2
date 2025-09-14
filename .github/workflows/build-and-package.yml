@@ -138,14 +138,36 @@ jobs:
         import subprocess
         workspace = os.environ.get('GITHUB_WORKSPACE', '${{github.workspace}}')
         install_path = os.path.join(workspace, 'install')
-        exe_path = os.path.join(install_path, 'bin', 'WingGifEditor2.exe')
+        bin_path = os.path.join(install_path, 'bin')
+        exe_path = os.path.join(bin_path, 'WingGifEditor2.exe')
         
+        print('Install path:', install_path)
+        print('Bin path:', bin_path)
+        print('Executable path:', exe_path)
+        
+        # 检查install目录是否存在
+        if not os.path.exists(install_path):
+            print('ERROR: Install directory does not exist')
+            print('Contents of workspace:')
+            for item in os.listdir(workspace):
+                print('  ', item)
+            exit(1)
+            
+        # 检查bin目录是否存在
+        if not os.path.exists(bin_path):
+            print('ERROR: Bin directory does not exist')
+            print('Contents of install directory:')
+            for item in os.listdir(install_path):
+                print('  ', item)
+            exit(1)
+        
+        # 检查可执行文件是否存在
         if os.path.exists(exe_path):
             print('Found executable:', exe_path)
             # 使用windeployqt收集依赖
             windeployqt_cmd = [
                 'windeployqt',
-                '--dir', os.path.join(install_path, 'bin'),
+                '--dir', bin_path,
                 '--verbose', '2',
                 exe_path
             ]
@@ -160,7 +182,13 @@ jobs:
             else:
                 print('windeployqt completed successfully')
         else:
-            print('Executable not found:', exe_path)
+            print('ERROR: Executable not found:', exe_path)
+            print('Contents of bin directory:')
+            if os.path.exists(bin_path):
+                for item in os.listdir(bin_path):
+                    print('  ', item)
+            else:
+                print('  Bin directory does not exist')
             exit(1)
         "
       shell: bash
