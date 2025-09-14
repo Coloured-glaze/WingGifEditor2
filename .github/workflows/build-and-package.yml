@@ -86,7 +86,8 @@ jobs:
         echo "Build directory contents:"
         python -c "
         import os
-        build_path = '${{github.workspace}}/build'
+        workspace = os.environ.get('GITHUB_WORKSPACE', '${{github.workspace}}')
+        build_path = os.path.join(workspace, 'build')
         print('Listing contents of:', build_path)
         if os.path.exists(build_path):
             for item in os.listdir(build_path):
@@ -96,7 +97,13 @@ jobs:
         "
         echo "Installing to: ${{github.workspace}}/install"
         # 使用Python创建安装目录
-        python -c "import os; os.makedirs('${{github.workspace}}/install', exist_ok=True)"
+        python -c "
+        import os
+        workspace = os.environ.get('GITHUB_WORKSPACE', '${{github.workspace}}')
+        install_path = os.path.join(workspace, 'install')
+        os.makedirs(install_path, exist_ok=True)
+        print('Created install directory:', install_path)
+        "
         # 执行CMake安装
         cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --prefix ${{github.workspace}}/install
       shell: bash
