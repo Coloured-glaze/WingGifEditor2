@@ -27,6 +27,11 @@ on:
           - win64_msvc2019_64
           - gcc_64
         default: 'win64_msvc2019_64'
+      build_info:
+        description: 'Build Information'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -208,6 +213,6 @@ jobs:
   
     - uses: actions/upload-artifact@v4
       with:
-        name: WingGifEditor2-${{ inputs.os == 'windows-latest' && 'windows' || 'linux' }}-${{ inputs.qt_version }}-build
+        name: WingGifEditor2-${{ inputs.os == 'windows-latest' && 'windows' || 'linux' }}-${{ inputs.qt_version }}-Qt${{ inputs.arch }}-${{ inputs.build_info }}
         # 自动压缩为zip
         path: ${{github.workspace}}/install

@@ -1046,7 +1046,7 @@
     <message>
         <location filename="../src/class/recentfilemanager.cpp" line="44"/>
         <source>RemoveItem</source>
-        <translation>删除项目</translation>
+        <translation>删除历史</translation>
     </message>
     <message>
         <location filename="../src/class/recentfilemanager.cpp" line="49"/>

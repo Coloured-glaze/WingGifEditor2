@@ -258,6 +258,13 @@ void MainWindow::buildUpRibbonBar() {
                     if (!ok) {
                         return;
                     }
+                } else if (files.size() == 1) {
+                    f = files.first();
+                }
+
+                // Check if there's already an open file and ask for confirmation
+                if (!_curfilename.isEmpty() && !ensureSafeClose()) {
+                    return;
                 }
 
                 openGif(f);
