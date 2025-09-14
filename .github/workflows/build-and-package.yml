@@ -79,11 +79,11 @@ jobs:
       run: |
         echo "Current directory: $(pwd)"
         echo "Build directory contents:"
-        if [[ "${{ inputs.os }}" == "windows-latest" ]]; then
+        if ("windows-latest" -eq "windows-latest") {
           powershell -Command "Get-ChildItem -Path '${{github.workspace}}/build'"
-        else
+        } else {
           ls -la ${{github.workspace}}/build || true
-        fi
+        }
         echo "Installing to: ${{github.workspace}}/install"
         # 创建安装目录
         mkdir -p ${{github.workspace}}/install
@@ -91,15 +91,16 @@ jobs:
         cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --prefix ${{github.workspace}}/install
         # 检查安装结果
         echo "Installation completed. Install directory contents:"
-        if [[ "${{ inputs.os }}" == "windows-latest" ]]; then
-          if [ -d "${{github.workspace}}/install" ]; then
+        if ("windows-latest" -eq "windows-latest") {
+          if (Test-Path "${{github.workspace}}/install") {
             powershell -Command "Get-ChildItem -Path '${{github.workspace}}/install' -Recurse"
-          else
+          } else {
             echo "Install directory not found or empty"
-          fi
-        else
+          }
+        } else {
           ls -la ${{github.workspace}}/install || echo "Install directory not found or empty"
-        fi
+        }
+      shell: bash
         
     - name: Alternative Python-based Install (if CMake install fails)
       if: inputs.os == 'ubuntu-latest'
@@ -116,15 +117,15 @@ jobs:
     - name: List files after build
       run: |
         echo "Listing files in install directory:"
-        if [[ "${{ inputs.os }}" == "windows-latest" ]]; then
-          if [ -d "${{github.workspace}}/install" ]; then
+        if ("windows-latest" -eq "windows-latest") {
+          if (Test-Path "${{github.workspace}}/install") {
             powershell -Command "Get-ChildItem -Path '${{github.workspace}}/install' -Recurse"
-          else
+          } else {
             echo "Install directory not found"
-          fi
-        else
+          }
+        } else {
           ls -la ${{github.workspace}}/install || echo "Install directory not found"
-        fi
+        }
       shell: bash
 
     - uses: actions/upload-artifact@v4
