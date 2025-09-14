@@ -1,116 +1,158 @@
-name: Build and Package Executable
+name: Build and Package WingGifEditor2
 
 on:
   workflow_dispatch:
+    inputs:
+      os:
+        description: 'Operating System'
+        required: true
+        type: choice
+        options:
+          - windows-latest
+          - ubuntu-latest
+        default: 'windows-latest'
+      qt_version:
+        description: 'Qt Version'
+        required: true
+        type: choice
+        options:
+          - 5.15.2
+          - 6.6.2
+        default: '6.6.2'
+      arch:
+        description: 'Architecture'
+        required: true
+        type: choice
+        options:
+          - win64_msvc2019_64
+          - gcc_64
+        default: 'win64_msvc2019_64'
 
 permissions:
   contents: write
-
+  
 env:
   BUILD_TYPE: Release
 
 jobs:
   build-and-package:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix: 
-        os: [windows-latest, ubuntu-latest]
-        qt_version: [5.15.2, 6.6.2]
-        arch: [win64_msvc2019_64, gcc_64]
-        exclude:
-          - os: windows-latest
-            arch: gcc_64
-          - os: ubuntu-latest
-            arch: win64_msvc2019_64
-
+    runs-on: ${{ inputs.os }}
+    
     steps:
-    - uses: actions/checkout@v4.1.7
+    - name: Checkout repository
+      uses: actions/checkout@v4.1.7
       with:
-          submodules: recursive 
-          fetch-depth: 0 
-          fetch-tags: true 
+        submodules: recursive
+        fetch-depth: 0
+        fetch-tags: true
+        
+    - name: Validate inputs
+      run: |
+        if [[ "${{ inputs.os }}" == "windows-latest" && "${{ inputs.arch }}" == "gcc_64" ]]; then
+          echo "Invalid combination: windows-latest cannot use gcc_64"
+          exit 1
+        fi
+        if [[ "${{ inputs.os }}" == "ubuntu-latest" && "${{ inputs.arch }}" == "win64_msvc2019_64" ]]; then
+          echo "Invalid combination: ubuntu-latest cannot use win64_msvc2019_64"
+          exit 1
+        fi
+      shell: bash
         
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: ${{ matrix.qt_version }}
-        host: ${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}
+        version: ${{ inputs.qt_version }}
+        host: ${{ inputs.os == 'windows-latest' && 'windows' || 'linux' }}
         target: 'desktop'
-        arch: ${{ matrix.arch }}
+        arch: ${{ inputs.arch }}
         cache: true
+        tools: 'tools_cmake'
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: |
+        cmake -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
-      
-    - name: Install (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: cmake --install ${{github.workspace}}/build --prefix ${{github.workspace}}/install
 
-    - name: Package Executable (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        mkdir ${{github.workspace}}/package
-        # 复制可执行文件
-        cp ${{github.workspace}}/build/${{env.BUILD_TYPE}}/WingGifEditor2.exe ${{github.workspace}}/package/
-        # 复制所需的DLL文件
-        cp ${{github.workspace}}/build/${{env.BUILD_TYPE}}/*.dll ${{github.workspace}}/package/ 2>/dev/null || true
-        # 复制Qt运行时文件
-        windeployqt --dir ${{github.workspace}}/package ${{github.workspace}}/package/WingGifEditor2.exe
+    - name: Install
+      run: cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-    - name: Package Executable (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Package Windows (Windows)
+      if: inputs.os == 'windows-latest'
       run: |
-        mkdir ${{github.workspace}}/package
-        # 复制可执行文件和库
+        # Create deployment directory
+        mkdir -p ${{github.workspace}}/package
+        
+        # Copy executable and dependencies
         cp -r ${{github.workspace}}/install/* ${{github.workspace}}/package/
-        # 复制desktop文件
-        cp ${{github.workspace}}/share/com.wingsummer.winggifeditor2.desktop ${{github.workspace}}/package/
-        # 复制其他资源文件
-        cp LICENSE ${{github.workspace}}/package/
-        cp authorband.svg ${{github.workspace}}/package/ 2>/dev/null || true
-        cp licenseband.svg ${{github.workspace}}/package/ 2>/dev/null || true
-        cp screenshot.png ${{github.workspace}}/package/ 2>/dev/null || true
-
-    - name: Create Archive (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
+        
+        # Use windeployqt to collect all Qt dependencies
+        windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw ${{github.workspace}}/package/WingGifEditor2.exe
+        
+        # Create zip archive
         cd ${{github.workspace}}/package
-        7z a -tzip WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}.zip *
+        7z a -tzip ${{github.workspace}}/WingGifEditor2-windows-${{ inputs.qt_version }}-${{ inputs.arch }}.zip .
+      shell: bash
 
-    - name: Create Archive (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Package Linux (Linux)
+      if: inputs.os == 'ubuntu-latest'
       run: |
-        cd ${{github.workspace}}/package
-        zip -r WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}.zip *
+        # Create AppImage structure
+        mkdir -p ${{github.workspace}}/package/AppDir/usr/bin
+        mkdir -p ${{github.workspace}}/package/AppDir/usr/lib
+        mkdir -p ${{github.workspace}}/package/AppDir/usr/share/applications
+        mkdir -p ${{github.workspace}}/package/AppDir/usr/share/icons/hicolor/256x256/apps
+        
+        # Copy executable and libraries
+        cp -r ${{github.workspace}}/install/* ${{github.workspace}}/package/AppDir/usr/bin/
+        
+        # Create desktop file
+        cat > ${{github.workspace}}/package/AppDir/usr/share/applications/wing-gif-editor.desktop << EOF
+        [Desktop Entry]
+        Type=Application
+        Name=WingGifEditor2
+        Exec=WingGifEditor2
+        Icon=WingGifEditor2
+        Categories=Graphics;2DGraphics;RasterGraphics;
+        EOF
+        
+        # Copy icon
+        cp ${{github.workspace}}/images/icon.png ${{github.workspace}}/package/AppDir/usr/share/icons/hicolor/256x256/apps/WingGifEditor2.png
+        
+        # Download and use linuxdeployqt
+        wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+        chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+        
+        # Create AppImage
+        ./linuxdeployqt-continuous-x86_64.AppImage ${{github.workspace}}/package/AppDir/usr/share/applications/wing-gif-editor.desktop -appimage
+        
+        # Rename output
+        mv WingGifEditor2*.AppImage ${{github.workspace}}/WingGifEditor2-linux-${{ inputs.qt_version }}-${{ inputs.arch }}.AppImage
+      shell: bash
 
-    - name: Upload Artifact
+    - name: Upload executable package (Windows)
+      if: inputs.os == 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}-package
-        path: ${{github.workspace}}/package/*.zip
+        name: WingGifEditor2-windows-${{ inputs.qt_version }}-${{ inputs.arch }}
+        path: ${{github.workspace}}/WingGifEditor2-windows-${{ inputs.qt_version }}-${{ inputs.arch }}.zip
+        retention-days: 30
 
-    # - name: Create Release
-    #   uses: actions/create-release@v1
-    #   if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   with:
-    #     tag_name: v${{ github.run_number }}-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}
-    #     release_name: WingGifEditor2 ${{ matrix.qt_version }} for ${{ matrix.os == 'windows-latest' && 'Windows' || 'Linux' }}
-    #     draft: false
-    #     prerelease: false
+    - name: Upload executable package (Linux)
+      if: inputs.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: WingGifEditor2-linux-${{ inputs.qt_version }}-${{ inputs.arch }}
+        path: ${{github.workspace}}/WingGifEditor2-linux-${{ inputs.qt_version }}-${{ inputs.arch }}.AppImage
+        retention-days: 30
 
-    # - name: Upload Release Asset
-    #   uses: actions/upload-release-asset@v1
-    #   if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   with:
-    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #     asset_path: ${{github.workspace}}/package/WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}.zip
-    #     asset_name: WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}.zip
-    #     asset_content_type: application/zip
+    - name: Upload build cache
+      uses: actions/upload-artifact@v4
+      with:
+        name: WingGifEditor2-${{ inputs.os == 'windows-latest' && 'windows' || 'linux' }}-${{ inputs.qt_version }}-${{ inputs.arch }}-build-cache
+        path: ${{github.workspace}}/build
+        retention-days: 7
+    
