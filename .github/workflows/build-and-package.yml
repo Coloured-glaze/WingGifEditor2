@@ -1,0 +1,116 @@
+name: Build and Package Executable
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-and-package:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix: 
+        os: [windows-latest, ubuntu-latest]
+        qt_version: [5.15.2, 6.6.2]
+        arch: [win64_msvc2019_64, gcc_64]
+        exclude:
+          - os: windows-latest
+            arch: gcc_64
+          - os: ubuntu-latest
+            arch: win64_msvc2019_64
+
+    steps:
+    - uses: actions/checkout@v4.1.7
+      with:
+          submodules: recursive 
+          fetch-depth: 0 
+          fetch-tags: true 
+        
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ matrix.qt_version }}
+        host: ${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}
+        target: 'desktop'
+        arch: ${{ matrix.arch }}
+        cache: true
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
+      
+    - name: Install (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: cmake --install ${{github.workspace}}/build --prefix ${{github.workspace}}/install
+
+    - name: Package Executable (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir ${{github.workspace}}/package
+        # 复制可执行文件
+        cp ${{github.workspace}}/build/${{env.BUILD_TYPE}}/WingGifEditor2.exe ${{github.workspace}}/package/
+        # 复制所需的DLL文件
+        cp ${{github.workspace}}/build/${{env.BUILD_TYPE}}/*.dll ${{github.workspace}}/package/ 2>/dev/null || true
+        # 复制Qt运行时文件
+        windeployqt --dir ${{github.workspace}}/package ${{github.workspace}}/package/WingGifEditor2.exe
+
+    - name: Package Executable (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mkdir ${{github.workspace}}/package
+        # 复制可执行文件和库
+        cp -r ${{github.workspace}}/install/* ${{github.workspace}}/package/
+        # 复制desktop文件
+        cp ${{github.workspace}}/share/com.wingsummer.winggifeditor2.desktop ${{github.workspace}}/package/
+        # 复制其他资源文件
+        cp LICENSE ${{github.workspace}}/package/
+        cp authorband.svg ${{github.workspace}}/package/ 2>/dev/null || true
+        cp licenseband.svg ${{github.workspace}}/package/ 2>/dev/null || true
+        cp screenshot.png ${{github.workspace}}/package/ 2>/dev/null || true
+
+    - name: Create Archive (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd ${{github.workspace}}/package
+        7z a -tzip WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}.zip *
+
+    - name: Create Archive (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd ${{github.workspace}}/package
+        zip -r WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}.zip *
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}-package
+        path: ${{github.workspace}}/package/*.zip
+
+    # - name: Create Release
+    #   uses: actions/create-release@v1
+    #   if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     tag_name: v${{ github.run_number }}-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}
+    #     release_name: WingGifEditor2 ${{ matrix.qt_version }} for ${{ matrix.os == 'windows-latest' && 'Windows' || 'Linux' }}
+    #     draft: false
+    #     prerelease: false
+
+    # - name: Upload Release Asset
+    #   uses: actions/upload-release-asset@v1
+    #   if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+    #     asset_path: ${{github.workspace}}/package/WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}.zip
+    #     asset_name: WingGifEditor2-${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}-${{ matrix.qt_version }}.zip
+    #     asset_content_type: application/zip
