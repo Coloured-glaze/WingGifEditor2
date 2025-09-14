@@ -129,19 +129,65 @@ jobs:
         "
       shell: bash
 
+    - name: Collect Qt dependencies
+      run: |
+        echo "Collecting Qt dependencies..."
+        # 使用windeployqt收集Qt依赖
+        python -c "
+        import os
+        import subprocess
+        workspace = os.environ.get('GITHUB_WORKSPACE', '${{github.workspace}}')
+        install_path = os.path.join(workspace, 'install')
+        exe_path = os.path.join(install_path, 'bin', 'WingGifEditor2.exe')
+        
+        if os.path.exists(exe_path):
+            print('Found executable:', exe_path)
+            # 使用windeployqt收集依赖
+            windeployqt_cmd = [
+                'windeployqt',
+                '--dir', os.path.join(install_path, 'bin'),
+                '--verbose', '2',
+                exe_path
+            ]
+            print('Executing:', ' '.join(windeployqt_cmd))
+            result = subprocess.run(windeployqt_cmd, capture_output=True, text=True)
+            print('windeployqt stdout:', result.stdout)
+            if result.stderr:
+                print('windeployqt stderr:', result.stderr)
+            if result.returncode != 0:
+                print('windeployqt failed with return code:', result.returncode)
+                exit(result.returncode)
+            else:
+                print('windeployqt completed successfully')
+        else:
+            print('Executable not found:', exe_path)
+            exit(1)
+        "
+      shell: bash
+
     - name: List installed files
       run: |
         echo "Listing files in install directory:"
         python -c "
         import os
-        install_path = '${{github.workspace}}/install'
-        for root, dirs, files in os.walk(install_path):
-            level = root.replace(install_path, '').count(os.sep)
-            indent = ' ' * 2 * level
-            print('{}{}/'.format(indent, os.path.basename(root)))
-            subindent = ' ' * 2 * (level + 1)
-            for file in files:
-                print('{}{}'.format(subindent, file))
+        workspace = os.environ.get('GITHUB_WORKSPACE', '${{github.workspace}}')
+        install_path = os.path.join(workspace, 'install')
+        print('Install directory path:', install_path)
+        if os.path.exists(install_path):
+            print('Install directory exists')
+            for root, dirs, files in os.walk(install_path):
+                level = root.replace(install_path, '').count(os.sep)
+                indent = ' ' * 2 * level
+                print('{}{}/'.format(indent, os.path.basename(root)))
+                subindent = ' ' * 2 * (level + 1)
+                for file in files:
+                    print('{}{}'.format(subindent, file))
+        else:
+            print('Install directory does not exist:', install_path)
+            # 尝试列出工作目录内容以调试
+            print('Contents of workspace:')
+            for item in os.listdir(workspace):
+                print('  ', item)
         "
       shell: bash
   
