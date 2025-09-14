@@ -108,6 +108,10 @@ ExportDialog::ExportDialog(QWidget *parent) : FramelessDialogBase(parent) {
 
     buildUpContent(widget);
 
+    // 设置对话框的最小大小
+    setMinimumSize(400, 200);
+    resize(450, 250);
+
     setWindowTitle(tr("Export"));
 }
 

@@ -55,6 +55,8 @@ QPathEdit::QPathEdit(QPathEdit::PathMode pathMode, QWidget *parent,
       hasCustomIcon(false) {
     // setup dialog
     dialog->setOptions(QFileDialog::Option(0));
+    // 设置文件对话框的最小大小
+    dialog->setMinimumSize(700, 400);
     setPathMode(pathMode);
     connect(dialog, &QFileDialog::fileSelected, this,
             &QPathEdit::dialogFileSelected);
