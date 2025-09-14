@@ -262,22 +262,31 @@ void MainWindow::buildUpRibbonBar() {
                     f = files.first();
                 }
 
-                // Check if there's already an open file and ask for confirmation
-                if (!_curfilename.isEmpty() && !m_dontAskAgain) {
-                    ConfirmDialog dialog(_curfilename, f, this);
-                    int result = dialog.exec();
-                    
-                    // 如果用户选择了"不再询问"，则保存设置
-                    if (dialog.isDontAskAgainChecked()) {
-                        m_dontAskAgain = true;
-                    }
-                    
-                    // 如果用户点击了取消，则返回
-                    if (result != QDialog::Accepted) {
+                // Check if there's already an open file
+                if (!_curfilename.isEmpty()) {
+                    // 如果拖放的是同一个文件，直接返回
+                    if (_curfilename == f) {
                         return;
                     }
-                } else if (!_curfilename.isEmpty() && !ensureSafeClose()) {
-                    return;
+                    
+                    // 如果不是同一个文件，且用户没有选择"不再询问"，则显示确认对话框
+                    if (!m_dontAskAgain) {
+                        ConfirmDialog dialog(_curfilename, f, this);
+                        int result = dialog.exec();
+                        
+                        // 如果用户选择了"不再询问"，则保存设置
+                        if (dialog.isDontAskAgainChecked()) {
+                            m_dontAskAgain = true;
+                        }
+                        
+                        // 如果用户点击了取消，则返回
+                        if (result != QDialog::Accepted) {
+                            return;
+                        }
+                    } else if (!ensureSafeClose()) {
+                        // 如果用户选择了"不再询问"但文件未保存，仍然需要确认是否关闭
+                        return;
+                    }
                 }
 
                 openGif(f);
@@ -1189,14 +1198,37 @@ void MainWindow::openGif(const QString &filename) {
     _model->clearData();
     undo.clear();
 
-    if (checkIsGif(filename) && readGif(filename)) {
-        _curfilename = filename;
-        setSaved(true);
-        setEditModeEnabled(true);
-        m_recentmanager->addRecentFile(filename);
+    // 检查文件是否存在
+    QFileInfo fileInfo(filename);
+    if (!fileInfo.exists()) {
+        QString errorMsg = tr("Failed to open GIF file: %1 (File not found)").arg(filename);
+        Logger::critical(errorMsg);
+        Toast::toast(this, QStringLiteral("open"), tr("InvalidGif"));
+        return;
+    }
+
+    // 检查文件是否可读
+    if (!fileInfo.isReadable()) {
+        QString errorMsg = tr("Failed to open GIF file: %1 (File is not readable)").arg(filename);
+        Logger::critical(errorMsg);
+        Toast::toast(this, QStringLiteral("open"), tr("InvalidGif"));
+        return;
+    }
+
+    if (checkIsGif(filename)) {
+        if (readGif(filename)) {
+            _curfilename = filename;
+            setSaved(true);
+            setEditModeEnabled(true);
+            m_recentmanager->addRecentFile(filename);
+        } else {
+            // readGif内部已经记录了更详细的错误信息
+            QString errorMsg = tr("Failed to open GIF file: %1 (Invalid GIF format)").arg(filename);
+            Logger::critical(errorMsg);
+            Toast::toast(this, QStringLiteral("open"), tr("InvalidGif"));
+        }
     } else {
-        // 记录错误日志
-        QString errorMsg = tr("Failed to open GIF file: %1").arg(filename);
+        QString errorMsg = tr("Failed to open GIF file: %1 (Not a GIF file)").arg(filename);
         Logger::critical(errorMsg);
         Toast::toast(this, QStringLiteral("open"), tr("InvalidGif"));
     }

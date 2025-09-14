@@ -1148,9 +1148,24 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/dialog/mainwindow.cpp" line="1181"/>
-        <source>Failed to open GIF file: %1</source>
-        <translation>无法打开GIF文件: %1</translation>
+        <location filename="../src/dialog/mainwindow.cpp" line="1204"/>
+        <source>Failed to open GIF file: %1 (File not found)</source>
+        <translation>无法打开GIF文件: %1 (文件未找到)</translation>
+    </message>
+    <message>
+        <location filename="../src/dialog/mainwindow.cpp" line="1212"/>
+        <source>Failed to open GIF file: %1 (File is not readable)</source>
+        <translation>无法打开GIF文件: %1 (文件不可读)</translation>
+    </message>
+    <message>
+        <location filename="../src/dialog/mainwindow.cpp" line="1226"/>
+        <source>Failed to open GIF file: %1 (Invalid GIF format)</source>
+        <translation>无法打开GIF文件: %1 (无效的GIF格式)</translation>
+    </message>
+    <message>
+        <location filename="../src/dialog/mainwindow.cpp" line="1231"/>
+        <source>Failed to open GIF file: %1 (Not a GIF file)</source>
+        <translation>无法打开GIF文件: %1 (不是GIF文件)</translation>
     </message>
 </context>
 <context>
