@@ -70,21 +70,47 @@ jobs:
 
     - name: Configure CMake
       run: |
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install 
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
 
     - name: Install
-      run: cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: |
+        echo "Current directory: $(pwd)"
+        echo "Build directory contents:"
+        ls -la ${{github.workspace}}/build || true
+        echo "Installing to: ${{github.workspace}}/install"
+        # 创建安装目录
+        mkdir -p ${{github.workspace}}/install
+        # 执行CMake安装
+        cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --prefix ${{github.workspace}}/install
+        # 检查安装结果
+        echo "Installation completed. Install directory contents:"
+        ls -la ${{github.workspace}}/install || echo "Install directory not found or empty"
+        
+    - name: Alternative Python-based Install (if CMake install fails)
+      run: |
+        echo "Trying alternative Python-based installation..."
+        # 检查是否需要使用Python脚本安装
+        if [ ! -d "${{github.workspace}}/install" ] || [ -z "$(ls -A ${{github.workspace}}/install)" ]; then
+          echo "CMake install appears to have failed, trying Python installer..."
+          python3 ${{github.workspace}}/share/installer.py install -b ${{github.workspace}}/build
+        else
+          echo "CMake install seems to have succeeded, skipping Python installer"
+        fi
 
     - name: List files after build
       run: |
         echo "Listing files in install directory:"
         if [[ "${{ inputs.os }}" == "windows-latest" ]]; then
-          dir ${{github.workspace}}/install || true
+          if [ -d "${{github.workspace}}/install" ]; then
+            dir ${{github.workspace}}/install
+          else
+            echo "Install directory not found"
+          fi
         else
-          ls -la ${{github.workspace}}/install || true
+          ls -la ${{github.workspace}}/install || echo "Install directory not found"
         fi
       shell: bash
 
@@ -92,4 +118,4 @@ jobs:
       with:
         name: WingGifEditor2-${{ inputs.os == 'windows-latest' && 'windows' || 'linux' }}-${{ inputs.qt_version }}-build-cache
         # 自动压缩为zip
-        path: ${{github.workspace}}/build
+        path: ${{github.workspace}}/install
