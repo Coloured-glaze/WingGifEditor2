@@ -68,7 +68,7 @@
 
 constexpr auto EMPTY_FUNC = [] {};
 
-MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent) {
+MainWindow::MainWindow(QWidget *parent) : FramelessMainWindow(parent), m_dontAskAgain(false) {
     this->setUpdatesEnabled(false);
 
     // recent file manager init
@@ -263,7 +263,20 @@ void MainWindow::buildUpRibbonBar() {
                 }
 
                 // Check if there's already an open file and ask for confirmation
-                if (!_curfilename.isEmpty() && !ensureSafeClose()) {
+                if (!_curfilename.isEmpty() && !m_dontAskAgain) {
+                    ConfirmDialog dialog(_curfilename, f, this);
+                    int result = dialog.exec();
+                    
+                    // 如果用户选择了"不再询问"，则保存设置
+                    if (dialog.isDontAskAgainChecked()) {
+                        m_dontAskAgain = true;
+                    }
+                    
+                    // 如果用户点击了取消，则返回
+                    if (result != QDialog::Accepted) {
+                        return;
+                    }
+                } else if (!_curfilename.isEmpty() && !ensureSafeClose()) {
                     return;
                 }
 
@@ -832,7 +845,13 @@ void MainWindow::on_export_single(int index) {
             dir.mkpath(".");
         }
         
-        QString fileName = QString::number(index) + "." + ext;
+        // 使用自定义名称或默认序号生成文件名
+        QString fileName;
+        if (res.customName.isEmpty()) {
+            fileName = QString::number(index) + "." + ext;
+        } else {
+            fileName = res.customName + "_" + QString::number(index) + "." + ext;
+        }
         _model->image(index).save(dir.absoluteFilePath(fileName), ext);
     }
 }
@@ -1176,6 +1195,9 @@ void MainWindow::openGif(const QString &filename) {
         setEditModeEnabled(true);
         m_recentmanager->addRecentFile(filename);
     } else {
+        // 记录错误日志
+        QString errorMsg = tr("Failed to open GIF file: %1").arg(filename);
+        Logger::critical(errorMsg);
         Toast::toast(this, QStringLiteral("open"), tr("InvalidGif"));
     }
 }

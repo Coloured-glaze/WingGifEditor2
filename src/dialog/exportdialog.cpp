@@ -20,6 +20,7 @@
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QShortcut>
 #include <QStandardPaths>
@@ -42,6 +43,13 @@ ExportDialog::ExportDialog(QWidget *parent) : FramelessDialogBase(parent) {
     folder->setPath(dir.absolutePath() + "/" + "WingGifEditor");
 
     layout->addWidget(folder);
+    layout->addSpacing(10);
+    
+    // 添加自定义名称输入框
+    layout->addWidget(new QLabel(tr("CustomName"), this));
+    customNameEdit = new QLineEdit(this);
+    customNameEdit->setPlaceholderText(tr("CustomNamePlaceholder"));
+    layout->addWidget(customNameEdit);
     layout->addSpacing(10);
 
     auto group = new QButtonGroup(this);
@@ -119,6 +127,7 @@ ExportResult ExportDialog::getResult() { return res; }
 
 void ExportDialog::on_accept() {
     res.path = folder->path();
+    res.customName = customNameEdit->text();  // 保存自定义名称
     done(1);
 }
 

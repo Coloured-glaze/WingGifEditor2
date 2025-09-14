@@ -15,44 +15,25 @@
 ** =============================================================================
 */
 
-#ifndef EXPORTDIALOG_H
-#define EXPORTDIALOG_H
+#ifndef CONFIRMDIALOG_H
+#define CONFIRMDIALOG_H
 
-#include "QPathEdit/qpathedit.h"
 #include "framelessdialogbase.h"
+#include <QCheckBox>
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QVBoxLayout>
 
-#include <QButtonGroup>
-#include <QDialog>
-#include <QMainWindow>
-#include <QObject>
-
-enum class ExportImageType { PNG, JPG, TIFF, WEBP };
-
-struct ExportResult {
-    QString path;
-    ExportImageType type;
-    QString customName;  // 自定义名称
-};
-
-class ExportDialog : public FramelessDialogBase {
+class ConfirmDialog : public FramelessDialogBase {
     Q_OBJECT
+
 public:
-    ExportDialog(QWidget *parent = nullptr);
-    ExportResult getResult();
+    explicit ConfirmDialog(const QString &currentFile, const QString &newFile, QWidget *parent = nullptr);
+    
+    bool isDontAskAgainChecked() const;
 
 private:
-    void on_accept();
-    void on_reject();
-
-protected:
-    void closeEvent(QCloseEvent *event) override;
-
-private:
-    QPathEdit *folder;
-    QLineEdit *customNameEdit;  // 自定义名称输入框
-    QButtonGroup *btnbox;
-
-    ExportResult res;
+    QCheckBox *dontAskAgainCheckBox;
 };
 
-#endif // EXPORTDIALOG_H
+#endif // CONFIRMDIALOG_H

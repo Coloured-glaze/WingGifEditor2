@@ -25,6 +25,7 @@
 #include "class/recentfilemanager.h"
 #include "control/gifcontentgallery.h"
 #include "control/gifeditor.h"
+#include "dialog/confirmdialog.h"
 #include "dialog/cropgifdialog.h"
 #include "dialog/framelessmainwindow.h"
 #include "dialog/logdialog.h"
@@ -256,5 +257,8 @@ private:
     QIcon _infoUnsaved;
 
     QToolButton *m_iSaved = nullptr;
+    
+    // Settings
+    bool m_dontAskAgain;  // 是否不再询问
 };
 #endif // MAINWINDOW_H

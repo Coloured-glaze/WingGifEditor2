@@ -1137,4 +1137,59 @@
         <translation>请等待</translation>
     </message>
 </context>
+<context>
+    <name>GifContentGallery</name>
+    <message>
+        <location filename="../src/control/gifcontentgallery.cpp" line="46"/>
+        <source>Export Single Image</source>
+        <translation>导出单张图像</translation>
+    </message>
+</context>
+<context>
+    <name>MainWindow</name>
+    <message>
+        <location filename="../src/dialog/mainwindow.cpp" line="1181"/>
+        <source>Failed to open GIF file: %1</source>
+        <translation>无法打开GIF文件: %1</translation>
+    </message>
+</context>
+<context>
+    <name>ConfirmDialog</name>
+    <message>
+        <location filename="../src/dialog/confirmdialog.cpp" line="25"/>
+        <source>Confirm</source>
+        <translation>确认</translation>
+    </message>
+    <message>
+        <location filename="../src/dialog/confirmdialog.cpp" line="29"/>
+        <source>You have already opened a GIF file:
+%1
+
+Do you want to open the new file?
+%2</source>
+        <translation>您已经打开了一个 GIF 文件：
+%1
+
+您想要打开新文件吗？
+%2</translation>
+    </message>
+    <message>
+        <location filename="../src/dialog/confirmdialog.cpp" line="37"/>
+        <source>Don't ask again</source>
+        <translation>不再询问</translation>
+    </message>
+</context>
+<context>
+    <name>ExportDialog</name>
+    <message>
+        <location filename="../src/dialog/exportdialog.cpp" line="50"/>
+        <source>CustomName</source>
+        <translation>自定义名称</translation>
+    </message>
+    <message>
+        <location filename="../src/dialog/exportdialog.cpp" line="52"/>
+        <source>CustomNamePlaceholder</source>
+        <translation>输入自定义名称（可选）</translation>
+    </message>
+</context>
 </TS>
