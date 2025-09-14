@@ -46,6 +46,11 @@ jobs:
         fetch-depth: 0
         fetch-tags: true
         
+    - name: Check Python version
+      run: |
+        python --version
+        pip -V
+
     - name: Validate inputs
       run: |
         if [[ "${{ inputs.os }}" == "windows-latest" && "${{ inputs.arch }}" == "gcc_64" ]]; then
@@ -89,45 +94,24 @@ jobs:
         mkdir -p ${{github.workspace}}/install
         # 执行CMake安装
         cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --prefix ${{github.workspace}}/install
-        # 检查安装结果
-        echo "Installation completed. Install directory contents:"
-        if ("windows-latest" -eq "windows-latest") {
-          if (Test-Path "${{github.workspace}}/install") {
-            powershell -Command "Get-ChildItem -Path '${{github.workspace}}/install' -Recurse"
-          } else {
-            echo "Install directory not found or empty"
-          }
-        } else {
-          ls -la ${{github.workspace}}/install || echo "Install directory not found or empty"
-        }
       shell: bash
-        
-    - name: Alternative Python-based Install (if CMake install fails)
-      if: inputs.os == 'ubuntu-latest'
-      run: |
-        echo "Trying alternative Python-based installation..."
-        # 检查是否需要使用Python脚本安装（仅适用于Linux）
-        if [ ! -d "${{github.workspace}}/install" ] || [ -z "$(ls -A ${{github.workspace}}/install)" ]; then
-          echo "CMake install appears to have failed, trying Python installer..."
-          python3 ${{github.workspace}}/share/installer.py install -b ${{github.workspace}}/build
-        else
-          echo "CMake install seems to have succeeded, skipping Python installer"
-        fi
 
-    - name: List files after build
+    - name: List installed files
       run: |
         echo "Listing files in install directory:"
-        if ("windows-latest" -eq "windows-latest") {
-          if (Test-Path "${{github.workspace}}/install") {
-            powershell -Command "Get-ChildItem -Path '${{github.workspace}}/install' -Recurse"
-          } else {
-            echo "Install directory not found"
-          }
-        } else {
-          ls -la ${{github.workspace}}/install || echo "Install directory not found"
-        }
+        python -c "
+        import os
+        install_path = '${{github.workspace}}/install'
+        for root, dirs, files in os.walk(install_path):
+            level = root.replace(install_path, '').count(os.sep)
+            indent = ' ' * 2 * level
+            print('{}{}/'.format(indent, os.path.basename(root)))
+            subindent = ' ' * 2 * (level + 1)
+            for file in files:
+                print('{}{}'.format(subindent, file))
+        "
       shell: bash
-
+  
     - uses: actions/upload-artifact@v4
       with:
         name: WingGifEditor2-${{ inputs.os == 'windows-latest' && 'windows' || 'linux' }}-${{ inputs.qt_version }}-build-cache
